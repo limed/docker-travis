@@ -7,7 +7,8 @@ RUN apk add --no-cache --virtual .build-deps \
 	build-base \
 	libffi-dev
 
-RUN gem install travis --no-document
+RUN gem install travis --no-document && \
+	apk add --no-cache git
 
 RUN apk --purge del .build-deps
 
