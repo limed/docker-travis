@@ -11,16 +11,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build Image
-        env:
-          DOCKER_REPO: limed/travis
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $DOCKER_REPO:latest .
-          docker image tag $DOCKER_REPO:latest $DOCKER_REPO:$IMAGE_TAG
-          echo "::set-output name=image::$DOCKER_REPO:$IMAGE_TAG"
-
-      - name: Push image
+      - name: Build and push Image
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: "limed/docker-travis/travis"
