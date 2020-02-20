@@ -5,7 +5,20 @@ on: [push]
 
 jobs:
   build:
+    name: Deploy
     runs-on: ubuntu-latest
 
+    env:
+      SHORT_SHA: ${GITHUB_SHA::8}
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build Image
+        env:
+          DOCKER_REPO: limed/travis
+        run: |
+          docker build -t $DOCKER_REPO:latest .
+          docker image tag $DOCKER_REPO:latest $DOCKER_REPO:$SHORT_SHA
+
