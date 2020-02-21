@@ -4,19 +4,37 @@ on: [push]
 
 jobs:
   build:
-    name: Deploy
+    name: Build and push
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Build and push Image
-        uses: elgohr/Publish-Docker-Github-Action@master
+      - name: Docker login
+        id: login-docker
+        uses: azure/docker-login@v1
+        env:
+          LOGIN_SERVER: docker.pkg.github.com
         with:
-          name: "limed/docker-travis/travis"
+          login-server: docker.pkg.github.com
           username: ${{ github.actor }}
           password: ${{ github.token }}
-          registry: docker.pkg.github.com
-          tags: "latest,${{ github.sha }}"
+        run: |
+          echo "::set-output name=docker-server::${LOGIN_SERVER}"
 
+      - name: Build and publish image
+        env:
+          REPO_NAME: ${{ github.repository }}
+          DOCKER_REPO: ${{ steps.docker-login.outputs.docker-server }}
+          IMAGE_NAME: travis
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG} .
+          docker image tag ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:latest
+          docker push ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:latest
+
+      - name: Docker logout
+        if: always()
+        run: |
+          docker logout ${{ steps.docker-login.outputs.docker-server }}
