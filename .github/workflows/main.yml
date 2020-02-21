@@ -14,27 +14,25 @@ jobs:
       - name: Docker login
         id: login-docker
         uses: azure/docker-login@v1
-        env:
-          LOGIN_SERVER: docker.pkg.github.com
         with:
           login-server: docker.pkg.github.com
           username: ${{ github.actor }}
           password: ${{ github.token }}
-        run: |
-          echo "::set-output name=docker-server::${LOGIN_SERVER}"
 
       - name: Build and publish image
+        id: docker-build
         env:
           REPO_NAME: ${{ github.repository }}
-          DOCKER_REPO: ${{ steps.docker-login.outputs.docker-server }}
+          DOCKER_REPO: docker.pkg.github.com
           IMAGE_NAME: travis
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG} .
           docker image tag ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:latest
           docker push ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REPO}/${REPO_NAME}/${IMAGE_NAME}:latest
+          echo "::set-output name=docker-server::${DOCKER_REPO}"
 
       - name: Docker logout
         if: always()
         run: |
-          docker logout ${{ steps.docker-login.outputs.docker-server }}
+          docker logout ${{ steps.docker-build.outputs.docker-server }}
